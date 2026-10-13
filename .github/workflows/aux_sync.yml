@@ -39,8 +39,8 @@ jobs:
           TARGET_DIR: "target_repo"
         run: |
           cd $TARGET_DIR
-          git config --local user.email "runtime@internal.net"
-          git config --local user.name "Runtime Agent"
+          git config --local user.email "miku@teto.vocaloid"
+          git config --local user.name "MIKU BOT"
           git add $(git status --porcelain | awk '{print $2}')
           
           if [ -n "$(git status --porcelain)" ]; then
