@@ -1,0 +1,51 @@
+name: Runtime Pipeline
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # Cada 24 horas
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Init Runner
+        uses: actions/checkout@v4
+
+      - name: Checkout Target Repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.TARGET_REPO }}
+          token: ${{ secrets.GH_PAT }}
+          path: target_repo
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: pip instll requests 2>/dev/null || pip install requests
+
+      - name: Execute Runtime
+        env:
+          SOURCE_JSON_URL: ${{ secrets.SOURCE_JSON_URL }}
+          TARGET_DIR: "target_repo"
+          TARGET_FILE_NAME: ${{ secrets.TARGET_FILE_NAME }}
+          CHANNEL_MAPPING_JSON: ${{ secrets.CHANNEL_MAPPING_JSON }}
+        run: python scripts/aux_runtime.py
+
+      - name: Commit and push changes
+        env:
+          TARGET_DIR: "target_repo"
+        run: |
+          cd $TARGET_DIR
+          git config --local user.email "runtime@internal.net"
+          git config --local user.name "Runtime Agent"
+          git add $(git status --porcelain | awk '{print $2}')
+          
+          if [ -n "$(git status --porcelain)" ]; then
+            git commit -m "Señal Eventos Actualizada"
+            git push origin main
+          else
+            echo "No hay cambios"
+          fi
